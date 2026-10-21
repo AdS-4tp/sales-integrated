@@ -14,7 +14,7 @@ h1,h2,h3,p{margin:0}
 .dot.sm{width:8px;height:8px}
 
 /* shell */
-.shell{display:flex;flex-wrap:wrap;min-height:100vh}
+.shell{display:flex;flex-wrap:wrap;min-height:100vh;overflow-x:clip}
 .rail{flex:1 1 220px;max-width:100%;padding:28px 20px;display:flex;flex-direction:column;gap:28px;border-right:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:10px;padding:0 12px}
 .brand span{font-size:26px;font-weight:800;letter-spacing:-.04em}
@@ -189,4 +189,8 @@ details.edit form{display:flex;flex-direction:column;gap:10px}
   h1.title,.bigq{font-size:40px}
   .detail,.stream-card{padding:20px}
   .stages b{font-size:20px}
+  .stages div{padding:0 1px}
+  .stages small{font-size:8px;letter-spacing:0}
+  .rail{border-right:0;border-bottom:1px solid var(--line);gap:16px;padding:20px 16px}
+  .rail-foot .mode-box{display:none}
 }
