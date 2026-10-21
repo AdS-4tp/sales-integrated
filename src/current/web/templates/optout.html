@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Opt out{% endblock %}
+{% block body %}
+<div class="optout"><div>
+  {% if ok %}
+  <p class="eyebrow signal">Done</p>
+  <h1 class="title" style="font-size:48px">You won&rsquo;t hear from us again.</h1>
+  <p class="muted" style="font-size:18px;line-height:1.5">Your address has been added to the suppression list. No further messages will be sent to it.</p>
+  {% else %}
+  <p class="eyebrow">Link not valid</p>
+  <h1 class="title" style="font-size:48px">We couldn&rsquo;t read that link.</h1>
+  <p class="muted" style="font-size:18px;line-height:1.5">Reply &ldquo;stop&rdquo; to the message you received and the sender will remove you.</p>
+  {% endif %}
+</div></div>
+{% endblock %}

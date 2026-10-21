@@ -80,6 +80,16 @@ the assistant and accepted as defaults; they should be re-confirmed before the s
   *next best move* card.
 - The onboarding interview is where the product's personality lives.
 
+## Corrections made while building
+
+- **Spain is not an "allow" country in the draft rules.** Spanish law may require prior
+  consent for commercial email even between businesses, so the rules table marks it
+  `needs_review`. The first demo funnel therefore targets Portugal and France. Italy is
+  also `needs_review`. Every `allow` rule is unreviewed and degrades to `needs_review`
+  for any mailer that can really send.
+- **Shadow approvals do not carry into live.** When a funnel goes live, drafts approved
+  during the shadow run return to the inbox for a fresh decision.
+
 ## Open questions
 
 1. Product name (Current is a placeholder).

@@ -1,0 +1,37 @@
+{% macro icon(name) -%}
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'today' %}<circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"></path>
+{%- elif name == 'decisions' %}<circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l3 3 5-6"></path>
+{%- elif name == 'funnel' %}<path d="M3 5h18l-7 8v6l-4-2v-4z"></path>
+{%- elif name == 'outbox' %}<path d="M3 13l3-8h12l3 8v6H3z"></path><path d="M3 13h5l1 3h6l1-3h5"></path>
+{%- endif %}</svg>
+{%- endmacro %}
+
+{% macro status_icon(status) -%}
+{%- if status in ('pass', 'adjusted') -%}
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4F1F" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="{{ 'Adjusted' if status == 'adjusted' else 'Passed' }}"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+{%- elif status == 'fail' -%}
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F3EDE4" stroke-width="2.25" stroke-linecap="round" role="img" aria-label="Failed"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+{%- else -%}
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A39889" stroke-width="2" role="img" aria-label="Needs review"><circle cx="12" cy="12" r="8" stroke-dasharray="3 3"></circle></svg>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro stream_svg(stream, particles, uid) -%}
+<svg viewBox="0 0 1200 260" role="img" aria-label="Pipeline stream, narrowing stage by stage">
+  <defs>
+    <linearGradient id="band{{ uid }}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF4F1F" stop-opacity=".16"></stop>
+      <stop offset=".45" stop-color="#FF4F1F" stop-opacity=".5"></stop>
+      <stop offset="1" stop-color="#FF4F1F" stop-opacity="1"></stop>
+    </linearGradient>
+    <filter id="glow{{ uid }}" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="14"></feGaussianBlur></filter>
+    {% for l in stream.lanes %}<path id="lane{{ uid }}{{ l.id }}" d="{{ l.d }}"></path>{% endfor %}
+  </defs>
+  <path filter="url(#glow{{ uid }})" opacity=".5" fill="url(#band{{ uid }})" d="{{ stream.band }}"></path>
+  <path fill="url(#band{{ uid }})" d="{{ stream.band }}"></path>
+  {% for lane, dur, begin, r in particles %}
+  <circle r="{{ r }}" fill="#F3EDE4"><animateMotion dur="{{ dur }}s" begin="-{{ begin }}s" repeatCount="indefinite"><mpath href="#lane{{ uid }}{{ lane }}"></mpath></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.92;1" dur="{{ dur }}s" begin="-{{ begin }}s" repeatCount="indefinite"></animate></circle>
+  {% endfor %}
+</svg>
+{%- endmacro %}

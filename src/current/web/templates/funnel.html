@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Current · Funnel{% endblock %}
+{% block content %}
+<header class="topbar" style="align-items:flex-end">
+  <div class="stack" style="gap:10px">
+    <div class="eyebrow signal">Funnel · built by the agent</div>
+    <h1 class="title" style="font-size:48px">{{ profile.icp }}</h1>
+    {% if plan.summary %}<p class="muted" style="font-size:15px">{{ plan.summary }} Search terms: {{ plan.keywords|join(', ') }}.</p>{% endif %}
+  </div>
+  <form method="post" action="/cycle"><input type="hidden" name="next" value="/funnel"><button class="btn btn-outline" type="submit">Run a scouting cycle</button></form>
+</header>
+
+<section class="stagecards">
+  {% for s in stages %}
+  <div class="stagecard {{ s.state }}">
+    <div class="head"><span class="mono" style="font-size:11px;letter-spacing:.12em;color:{{ 'var(--signal)' if s.state == 'cur' else 'var(--muted)' }}">{{ s.tag }}</span><span class="mono muted" style="font-size:11px">{{ s.num }}</span></div>
+    <h3>{{ s.name }}</h3>
+    <p>{{ s.desc }}</p>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="card stack">
+  <div class="card-head" style="margin:0"><h2>This funnel, step by step</h2><span class="mono muted" style="font-size:12px">{{ gate.mode.replace('_', ' ')|upper }} · REAL COUNTS</span></div>
+  <div class="nodes">
+    {% for n in nodes %}
+    <div class="node">
+      <div class="n"><b>{{ n.num }}</b><small>{{ n.who }}</small></div>
+      <h4>{{ n.name }}</h4><p>{{ n.desc }}</p>
+      <div class="val {{ 'none' if n.val == '—' }}">{{ n.val }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid2">
+  <div class="card wide">
+    <div class="card-head"><h2>{{ 'Before this can go live' if gate.next == 'live' else 'Before the shadow run' if gate.next == 'shadow' else 'Live' }}</h2></div>
+    {% for c in gate.criteria %}
+    <div class="check" style="padding:12px 0;border-top:1px solid var(--line);font-size:15px">
+      {% if c.ok %}<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF4F1F" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Met"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+      {% else %}<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A39889" stroke-width="2" role="img" aria-label="Not yet"><circle cx="12" cy="12" r="8" stroke-dasharray="3 3"></circle></svg>{% endif %}
+      <span><b>{{ c.name }}</b><span> · {{ c.detail }}</span></span>
+    </div>
+    {% else %}<p class="muted">This funnel is live. The agent works inside the limits you set.</p>{% endfor %}
+    {% if gate.next %}
+    <form method="post" action="/funnel/promote" style="margin-top:14px">
+      <button class="btn btn-primary" type="submit" {{ '' if gate.ok or dev else 'disabled' }}>Promote to {{ gate.next.replace('_', ' ') }}{{ '' if gate.ok else ' (dev unlock)' if dev else ' · locked' }}</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card narrow stack">
+    <div class="eyebrow">What this stage touches</div>
+    {% set m = gate.mode %}
+    <div class="kv"><span>Real prospects</span><span class="chip {{ 'live' if m != 'dry_run' }}">{{ 'yes' if m != 'dry_run' else 'no' }}</span></div>
+    <div class="kv"><span>Real drafts</span><span class="chip {{ 'live' if m != 'dry_run' }}">{{ 'yes' if m != 'dry_run' else 'no' }}</span></div>
+    <div class="kv"><span>Real emails sent</span><span class="chip {{ 'live' if m == 'live' }}">{{ 'yes, with approval' if m == 'live' else 'no' }}</span></div>
+    <div class="note">The prototype has no real mailer. Even live mode only writes to the <a href="/outbox" style="color:var(--signal)">outbox</a> ({{ outbox_n }} message{{ '' if outbox_n == 1 else 's' }}).</div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Prospects</h2><span class="mono muted" style="font-size:12px">PROTOTYPE CONTROLS: simulate replies and outcomes</span></div>
+  <div class="scroll">
+  <table class="tbl">
+    <thead><tr><th>Business</th><th>Country</th><th>Fit</th><th>Status</th><th>Why</th><th></th></tr></thead>
+    <tbody>
+    {% for l in leads %}
+    <tr>
+      <td><b>{{ l.org }}</b><br><span class="muted">{{ l.name }} · {{ l.recipient_type.replace('_', ' ') }}</span></td>
+      <td class="mono">{{ l.country }}</td>
+      <td class="mono">{{ l.fit_score if l.fit_score is not none else '—' }}</td>
+      <td><span class="chip {{ 'live' if l.status in ('booked', 'won') else 'shadow' if l.status in ('contacted', 'replied', 'offered') }}">{{ l.status }}</span></td>
+      <td class="muted" style="max-width:260px">{{ l.hold_reason or l.fit_reason or '' }}</td>
+      <td>
+        {% if l.status in ('contacted', 'replied', 'offered') %}
+        <details class="edit"><summary class="btn btn-sm">Simulate reply</summary>
+          <form method="post" action="/funnel/reply"><input type="hidden" name="lead_id" value="{{ l.id }}">
+            <textarea name="text" aria-label="Reply text" style="min-height:80px">Interesting, could we talk Thursday?</textarea><button class="btn btn-sm" type="submit">Deliver reply</button></form>
+        </details>
+        {% endif %}
+        {% if l.status in ('replied', 'offered') %}
+        <form method="post" action="/funnel/mark" class="inline"><input type="hidden" name="lead_id" value="{{ l.id }}"><input type="hidden" name="outcome" value="booked"><button class="btn btn-sm btn-outline" type="submit">Mark call booked</button></form>
+        {% elif l.status == 'booked' %}
+        <form method="post" action="/funnel/mark" class="inline"><input type="hidden" name="lead_id" value="{{ l.id }}"><input type="hidden" name="outcome" value="won"><button class="btn btn-sm btn-outline" type="submit">Mark won</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}<tr><td colspan="6" class="muted">No prospects yet. Run a scouting cycle.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <form method="post" action="/funnel/reset" style="margin-top:16px"><button class="btn btn-ghost btn-sm" type="submit">Clear demo data</button></form>
+</section>
+{% endblock %}

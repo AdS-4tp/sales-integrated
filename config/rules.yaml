@@ -1,0 +1,40 @@
+# Country rules for unsolicited outreach email.
+#
+# THIS FILE IS A DRAFT AND HAS NOT BEEN REVIEWED BY COUNSEL. It encodes the
+# product's conservative defaults, not legal advice.
+#
+# decision:
+#   block         never send
+#   needs_review  hold the lead until a human has looked at it
+#   allow         the guard may let it through, subject to the other checks
+# An `allow` rule is only honoured as-is when `reviewed: true`. Otherwise it
+# degrades to `needs_review` whenever the guard runs in strict mode (any mailer
+# that can really send). Anything not listed is `needs_review`.
+version: "2026-10-21-draft"
+reviewed_by: null
+
+rules:
+  # Prior consent is required, even for business recipients.
+  - {country: DE, recipient: business,    decision: block, reason: "Prior consent required for B2B email"}
+  - {country: DE, recipient: sole_trader, decision: block, reason: "Prior consent required"}
+  - {country: AT, recipient: business,    decision: block, reason: "Prior consent required for B2B email"}
+  - {country: AT, recipient: sole_trader, decision: block, reason: "Prior consent required"}
+
+  # Candidates for "allow" once counsel has confirmed the conditions.
+  - {country: PT, recipient: business, decision: allow, reviewed: false,
+     reason: "Legal-person recipients: opt-out regime (to be confirmed)"}
+  - {country: FR, recipient: business, decision: allow, reviewed: false,
+     reason: "B2B allowed if relevant to the recipient's role and opt-out offered (to be confirmed)"}
+  - {country: NL, recipient: business, decision: allow, reviewed: false,
+     reason: "B2B allowed with relevance and opt-out (to be confirmed)"}
+
+  # Known to need a closer look.
+  - {country: ES, recipient: business, decision: needs_review,
+     reason: "Spanish law may require prior consent for commercial email, check with counsel"}
+  - {country: IT, recipient: business, decision: needs_review,
+     reason: "Waiting for legal sign-off"}
+
+  # Sole traders are natural persons in several countries.
+  - {country: PT, recipient: sole_trader, decision: needs_review, reason: "Sole trader treated as natural person"}
+  - {country: FR, recipient: sole_trader, decision: needs_review, reason: "Sole trader treated as natural person"}
+  - {country: NL, recipient: sole_trader, decision: needs_review, reason: "Sole trader treated as natural person"}

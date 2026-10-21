@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stream_svg %}
+{% block title %}Current · Today{% endblock %}
+{% block content %}
+<header class="topbar">
+  <div class="eyebrow">{{ s.mode.replace('_', ' ') }} funnel · {{ profile.icp }}</div>
+  <form method="post" action="/cycle"><button class="btn btn-outline" type="submit">Run a scouting cycle</button></form>
+</header>
+
+<section class="hero">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-main">
+    <div class="eyebrow signal">Calls booked · this week</div>
+    <div class="hero-row">
+      <div class="hero-num">{{ s.booked }}</div>
+      <div class="hero-copy">
+        <p>{{ 'calls booked yet. Only a reply opens the door.' if s.booked == 0 else 'call booked. It began with their reply.' if s.booked == 1 else 'calls booked. Every one began with their reply.' }}</p>
+        <div class="delta">
+          <span class="chip live">{{ '%+d' % s.booked_delta }} vs last week</span>
+          <svg width="120" height="32" viewBox="0 0 120 32" role="img" aria-label="Calls booked per week, last 8 weeks">
+            {% for b in spark %}<rect x="{{ loop.index0 * 16 }}" y="{{ 32 - b.h }}" width="10" height="{{ b.h }}" rx="2" fill="{{ '#FF4F1F' if b.hot else '#2C2520' }}"></rect>{% endfor %}
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="next">
+    <div class="eyebrow signal">Next best move</div>
+    {% if nxt %}
+    <div class="eyebrow">{{ nxt.kicker }}</div>
+    <h2>{{ nxt.title }}</h2>
+    <p>{{ nxt.body }}</p>
+    <div class="btnrow">
+      <form method="post" action="{{ nxt.action }}">
+        {% for k, v in nxt.fields.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+        <button class="btn btn-primary" type="submit">{{ nxt.cta }}</button>
+      </form>
+      <a class="btn" href="/decisions">Open inbox</a>
+    </div>
+    {% else %}
+    <h2>All clear.</h2>
+    <p>Nothing is waiting on you. Run a scouting cycle to draft the next batch.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="stream-card">
+  <div class="card-head" style="margin:0">
+    <div class="eyebrow">The current · last 7 days{% if s.mode != 'live' %} · {{ s.mode.replace('_', ' ') }}, nothing is sent{% endif %}</div>
+    <div class="muted" style="display:flex;align-items:center;gap:8px;font-size:13px"><span class="dot sm"></span>Live</div>
+  </div>
+  {{ stream_svg(stream, particles, 't') }}
+  <div class="stages">
+    {% for label in ['Scouted', 'Qualified', 'Contacted', 'Replied', 'Booked', 'Won'] %}
+    <div><b class="{{ 'hot' if label == 'Booked' }}">{{ '{:,}'.format(counts[loop.index0]) }}</b><small>{{ label|upper }}</small></div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid2">
+  <div class="card wide" style="padding:24px 8px 8px">
+    <div class="card-head" style="padding:0 20px">
+      <h2>Decisions waiting</h2>
+      <span class="mono muted" style="font-size:12px">{{ (s.pending ~ ' WAITING') if s.pending else 'ALL CLEAR' }}</span>
+    </div>
+    <div class="rows">
+      {% for p in pend %}
+      <a class="rowline" href="/decisions?sel={{ p.id }}">
+        <span class="type">{{ p.type }}</span>
+        <span class="grow"><span class="t">{{ p.title }}</span><span class="m">{{ p.meta }}</span></span>
+        <span class="btn btn-outline btn-sm">Review</span>
+      </a>
+      {% else %}
+      <div class="rowline"><span class="muted">Nothing waiting.</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card narrow stack">
+    <div class="card-head" style="margin:0"><h2>Send guard</h2><span class="mono muted" style="font-size:12px">{{ 'ALL CHECKS PASS' if s.health.bounce <= 0.05 else 'HEALTH WARNING' }}</span></div>
+    {% if s.mode == 'live' %}
+    <div><span class="big">{{ s.sent_today }}</span> <span class="mono muted" style="font-size:14px">/ {{ s.limit }} sent today</span></div>
+    {% else %}
+    <div><span class="big">{{ s.approved_today_sim }}</span> <span class="mono muted" style="font-size:14px">approved today · nothing sent</span></div>
+    {% endif %}
+    <div class="gauge" aria-hidden="true"><i style="width:{{ pct if s.mode == 'live' else 0 }}%"></i></div>
+    <div class="muted" style="font-size:13px">{{ profile.provider.replace('_', ' ') }} · limit {{ s.limit }} a day</div>
+    <div>
+      <div class="kv"><span>Bounce rate</span><span class="mono">{{ '%.1f' % (s.health.bounce * 100) }}%</span></div>
+      <div class="kv"><span>Spam complaints</span><span class="mono">{{ '%.1f' % (s.health.complaint * 100) }}%</span></div>
+      <div class="kv"><span>Held back by country rules</span><span class="mono">{{ s.held_total }}</span></div>
+      <div class="kv"><span>On suppression list</span><span class="mono">{{ s.suppressed }}</span></div>
+    </div>
+    <div class="note">Every email says who is writing, where we found the contact, why they are hearing from you, and how to opt out in one click.</div>
+  </div>
+</section>
+
+<section class="grid2">
+  <div class="card wide">
+    <div class="card-head"><h2>While you were away</h2></div>
+    {% for t, text in events %}<div class="log"><span class="t">{{ t }}</span><span>{{ text }}</span></div>
+    {% else %}<div class="log"><span class="muted">Nothing yet. Run a scouting cycle.</span></div>{% endfor %}
+  </div>
+  <div class="card narrow">
+    <div class="card-head"><h2>Funnels</h2><a href="/funnel" style="font-size:13px;color:var(--signal)">Open &rarr;</a></div>
+    <a class="rowline" href="/funnel">
+      <span class="grow"><span class="t">{{ profile.icp }}</span><span class="m">{{ profile.countries|join(', ') }} · {{ counts[2] }} contacted · {{ counts[3] }} replied</span></span>
+      <span class="chip {{ 'live' if s.mode == 'live' else 'shadow' if s.mode == 'shadow' }}">{{ s.mode.replace('_', ' ') }}</span>
+    </a>
+  </div>
+</section>
+{% endblock %}

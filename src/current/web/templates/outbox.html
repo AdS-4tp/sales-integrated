@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Outbox{% endblock %}
+{% block content %}
+<div class="stack">
+  <p class="eyebrow signal">Outbox · nothing here has left this machine</p>
+  <h1 class="title">What would have been sent.</h1>
+  <p class="muted" style="font-size:16px;max-width:620px;line-height:1.5">This prototype has no real mailer. Live mode writes each approved message here so you can read exactly what recipients would get, footer included.</p>
+</div>
+{% for r in rows %}
+<div class="card stack">
+  <div class="eyebrow">{{ r.at[:16].replace('T', ' ') }} · to {{ r.to_email }}</div>
+  <h2>{{ r.subject }}</h2>
+  <div class="email"><div class="body">{{ r.body }}</div></div>
+</div>
+{% else %}
+<div class="empty">Nothing yet. Move the funnel to live and approve a draft.</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_icon %}
+{% block title %}Current · Decisions{% endblock %}
+{% block content %}
+<header class="topbar" style="align-items:flex-end">
+  <div class="stack" style="gap:8px">
+    <div class="eyebrow signal">Decisions</div>
+    <h1 class="title">{{ (pending_n ~ ' to decide.') if pending_n else 'All clear.' }}</h1>
+  </div>
+  <nav class="tabs" aria-label="Filter decisions">
+    {% for key, label in tabs %}<a href="/decisions?filter={{ key }}" class="{{ 'on' if filter == key }}">{{ label }}</a>{% endfor %}
+  </nav>
+</header>
+
+<section class="split">
+  <div class="qlist">
+    {% for v in views %}
+    <a class="qitem {{ 'sel' if v.id == sel }} {{ 'done' if v.status != 'pending' }}" href="/decisions?filter={{ filter }}&amp;sel={{ v.id }}">
+      <span class="top"><span class="mono muted" style="font-size:11px;letter-spacing:.1em">{{ v.type }}</span>{% if v.status != 'pending' %}<span class="mono" style="font-size:11px;letter-spacing:.08em;color:var(--signal)">{{ v.status.replace('_', ' ')|upper }}</span>{% endif %}</span>
+      <span class="t">{{ v.title }}</span>
+      <span class="muted" style="font-size:13px">{{ v.meta }}</span>
+    </a>
+    {% else %}
+    <div class="empty">Nothing in this view. Run a scouting cycle from Today.</div>
+    {% endfor %}
+  </div>
+
+  {% if detail %}
+  <div class="detail">
+    <div class="card-head" style="margin:0">
+      <div class="eyebrow">{{ 'Reply · answer a person who wrote first' if detail.kind == 'reply' else 'Email · one touch only' }}</div>
+      {% if detail.status != 'pending' %}<div class="mono" style="font-size:12px;letter-spacing:.1em;color:var(--signal)">{{ detail.status_label|upper }}</div>{% endif %}
+    </div>
+    <h2>{{ detail.title }}</h2>
+    <div class="email">
+      <div class="hdr">
+        <div><b>TO</b>{{ detail.d.lead_name }}, {{ detail.d.org }} &lt;{{ detail.d.email }}&gt;</div>
+        <div><b>SUBJECT</b><em>{{ detail.d.subject }}</em></div>
+      </div>
+      <div class="body">{{ detail.d.body }}</div>
+      <div class="foot">{{ detail.d.footer }}</div>
+    </div>
+    {% if detail.adjusted %}<div class="note">The agent removed {{ detail.adjusted|length }} claim{{ 's' if detail.adjusted|length > 1 }} it could not back with your proof: &ldquo;{{ detail.adjusted[0] }}&rdquo;</div>{% endif %}
+
+    <div>
+      <div class="eyebrow" style="padding-bottom:6px">Send guard</div>
+      <div class="checks">
+        {% for c in checks %}
+        <div class="check">{{ status_icon(c.status) }}<span><b>{{ c.name }}</b><span> · {{ c.detail }}</span></span></div>
+        {% else %}<div class="check muted">No guard record.</div>{% endfor %}
+      </div>
+    </div>
+
+    {% if detail.status == 'pending' %}
+    <div class="btnrow">
+      <form method="post" action="/decisions/{{ detail.id }}/approve"><button class="btn btn-primary" type="submit">{{ cta }}</button></form>
+      <details class="edit">
+        <summary class="btn">Edit</summary>
+        <form method="post" action="/decisions/{{ detail.id }}/edit">
+          <label class="f">Subject<input type="text" name="subject" value="{{ detail.d.subject }}"></label>
+          <label class="f">Message<textarea name="body">{{ detail.d.body }}</textarea></label>
+          <button class="btn" type="submit">Save changes</button>
+        </form>
+      </details>
+      <form method="post" action="/decisions/{{ detail.id }}/skip"><button class="btn btn-ghost" type="submit">Skip</button></form>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>How much may I do without asking?</h2><span class="mono muted" style="font-size:12px">The send guard applies at every level</span></div>
+  {% for key, label, hint, cur in autonomy %}
+  <div class="arow">
+    <div class="grow"><b>{{ label }}</b><span class="muted" style="font-size:13px">{{ hint }}</span></div>
+    <div class="seg" role="group" aria-label="{{ label }}">
+      {% for name in levels %}
+      <form method="post" action="/autonomy"><input type="hidden" name="kind" value="{{ key }}"><input type="hidden" name="level" value="{{ loop.index0 }}">
+        <button class="btn {{ 'on' if cur == loop.index0 }}" type="submit" aria-pressed="{{ 'true' if cur == loop.index0 else 'false' }}">{{ name }}</button></form>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}
